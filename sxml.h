@@ -11,59 +11,33 @@
 #define NODE_SIZE 2
 #define ATTRIBUTE_SIZE 2
 
-struct _XMLAttribute {
+/* XML LIST */
+typedef struct _XMLList {
+    int heap_size;
+    int count;
+    void** items;
+} XMLList;
+
+/* XML ATTRIBUTE */
+typedef struct _XMLAttribute {
     char* key;
     char* value;
-};
+} XMLAttribute;
 
-struct _XMLAttributeList {
-    int heap_size;
-    int index;
-    struct _XMLAttribute** attributes;
-};
-
-typedef struct _XMLAttributeList XMLAttributeList;
-
-typedef struct _XMLAttribute XMLAttribute;
-
-XMLAttributeList* new_XMLAttributeList(void);
-void append_XMLAttribute(XMLAttributeList*, XMLAttribute*);
-void free_XMLAttributeList(XMLAttributeList* list);
-
-struct _XMLNode {
+/* XML NODE */
+typedef struct _XMLNode {
     char* tag;
     char* inner_text;
     struct _XMLNode* parent;
-    XMLAttributeList* attributes;
-    struct _XMLNodeList* children;
-};
-
-struct _XMLNodeList {
-    int heap_size;
-    int index;
-    struct _XMLNode** children;
-};
-
-/* XML NODE */
-
-typedef struct _XMLNodeList XMLNodeList;
-
-typedef struct _XMLNode XMLNode;
-
-XMLNodeList* new_XMLNodeList(void);
-
-XMLNode* new_XMLNode(XMLNode*);
-
-void append_XMLNode(XMLNodeList*, XMLNode*);
-
-void free_XMLNodeList(XMLNodeList*);
+    XMLList* attributes;
+    XMLList* children;
+} XMLNode;
 
 /* XML DOCUMENT */
-
 typedef struct _XMLDocument {
     char* buffer;
     char* lexer;
-    XMLAttributeList* info;
+    XMLList* info;
     size_t lexer_size;
     size_t lexer_index;
     size_t index;
@@ -71,8 +45,37 @@ typedef struct _XMLDocument {
 } XMLDocument;
 
 /* NODE & ATRIBUTE STACK */
-XMLNodeList* SFXML_NODES;
-XMLAttributeList* SFXML_ATTRIBUTES;
+XMLList* SFXML_NODES;
+XMLList* SFXML_ATTRIBUTES;
+
+/* LIST IMPLEMENTATION */
+XMLList* new_XMLList() {
+    XMLList* list = malloc(sizeof(XMLList));
+    if (!list) {
+        printf("cannot allocate list\n");
+        exit(1);
+    }
+    list->count = 0;
+    list->heap_size = NODE_SIZE;
+    list->items = malloc(sizeof(void*) * list->heap_size);
+    return list;
+}
+
+void append_XMLItem(XMLList* list, void* item) {
+    if (list->count >= list->heap_size) {
+        list->heap_size *= 2;
+        list->items = realloc(list->items, sizeof(void*) * list->heap_size);
+        if (list->items == NULL) {
+            printf("Unable to reallocate list\n");
+        }
+    }
+    list->items[list->count++] = item;
+}
+
+void free_XMLList(XMLList* list) {
+    free(list->items);
+    free(list);
+}
 
 /* NODE IMPLEMENTATION */
 XMLNode* new_XMLNode(XMLNode* parent) {
@@ -83,25 +86,26 @@ XMLNode* new_XMLNode(XMLNode* parent) {
     }
     node->parent = parent;
 
-    node->children = new_XMLNodeList();
-    node->attributes = new_XMLAttributeList();
+    node->children = new_XMLList();
+    node->attributes = new_XMLList();
 
     node->tag = NULL;
     node->inner_text = NULL;
     if (parent != NULL)
-        append_XMLNode(parent->children, node);
-    append_XMLNode(SFXML_NODES, node);
+        append_XMLItem(parent->children, node);
+    append_XMLItem(SFXML_NODES, node);
     return node;
 }
 
 void print_XMLNode(XMLNode* node, int indent) {
     printf("%*s%s", 4 * indent, " ", node->tag);
-    for (int i = 0; i < node->attributes->index; i++) {
-        printf(" %s=\"%s\"", node->attributes->attributes[i]->key, node->attributes->attributes[i]->value);
+    for (int i = 0; i < node->attributes->count; i++) {
+        XMLAttribute* attribute = node->attributes->items[i];
+        printf(" %s=\"%s\"", attribute->key, attribute->value);
     }
     printf("\n");
-    for (int i = 0; i < node->children->index; i++) {
-        print_XMLNode(node->children->children[i], indent + 1);
+    for (int i = 0; i < node->children->count; i++) {
+        print_XMLNode(node->children->items[i], indent + 1);
     }
 }
 
@@ -112,47 +116,11 @@ void free_XMLNode(XMLNode* node) {
     if (node->inner_text)
         free(node->inner_text);
 
-    free_XMLNodeList(node->children);
-    free_XMLAttributeList(node->attributes);
+    free_XMLList(node->children);
+    free_XMLList(node->attributes);
     free(node);
 }
 
-/* NODE LIST IMPLEMENTATION */
-XMLNodeList* new_XMLNodeList(void) {
-    XMLNodeList* list = malloc(sizeof(XMLNodeList));
-    if (!list) {
-        printf("cannot allocate list\n");
-        exit(1);
-    }
-    list->index = 0;
-    list->heap_size = NODE_SIZE;
-    list->children = malloc(sizeof(XMLNode*) * list->heap_size);
-    return list;
-}
-
-void append_XMLNode(XMLNodeList* list, XMLNode* node) {
-    if (list->index >= list->heap_size) {
-        list->heap_size *= 2;
-        list->children = realloc(list->children, sizeof(XMLNode*) * list->heap_size);
-        if (list->children == NULL) {
-            printf("Unable to reallocate node list\n");
-        }
-    }
-    list->children[list->index++] = node;
-}
-
-void free_XMLNodeList(XMLNodeList* list) {
-    free(list->children);
-    free(list);
-}
-
-void free_XMLNodes(void) {
-    for (int i = 0; i < SFXML_NODES->index; i++) {
-        free_XMLNode(SFXML_NODES->children[i]);
-    }
-    free(SFXML_NODES->children);
-    free(SFXML_NODES);
-}
 
 /* ATTRIBUTE IMPLEMENTATION */
 XMLAttribute* new_XMLAttribute(void) {
@@ -164,13 +132,13 @@ XMLAttribute* new_XMLAttribute(void) {
     attribute->key = NULL;
     attribute->value = NULL;
 
-    append_XMLAttribute(SFXML_ATTRIBUTES, attribute);
+    append_XMLItem(SFXML_ATTRIBUTES, attribute);
     return attribute;
 }
 
 XMLAttribute* get_XMLAttribute(XMLNode* node, char* key) {
-    for (int i = 0; i < node->attributes->index; i++) {
-        XMLAttribute* attribute = node->attributes->attributes[i];
+    for (int i = 0; i < node->attributes->count; i++) {
+        XMLAttribute* attribute = node->attributes->items[i];
         if (!strcmp(attribute->key, key)) {
             return attribute;
         }
@@ -186,44 +154,6 @@ void free_XMLAttribute(XMLAttribute* attribute) {
     free(attribute);
 }
 
-/* ATTRIBUTE LIST IMPLEMENTATION */
-XMLAttributeList* new_XMLAttributeList(void) {
-    XMLAttributeList* list = malloc(sizeof(XMLAttributeList));
-    if (!list) {
-        printf("cannot allocate attribute list\n");
-        exit(1);
-    }
-    list->index = 0;
-    list->heap_size = ATTRIBUTE_SIZE;
-    list->attributes = malloc(sizeof(XMLAttribute*) * list->heap_size);
-    return list;
-}
-
-void append_XMLAttribute(XMLAttributeList* list, XMLAttribute* attribute) {
-    if (list->index >= list->heap_size) {
-        list->heap_size *= 2;
-        list->attributes = realloc(list->attributes, sizeof(XMLAttribute*) * list->heap_size);
-        if (!list->attributes) {
-            printf("Unable to reallocate node list\n");
-        }
-    }
-    list->attributes[list->index++] = attribute;
-}
-
-void free_XMLAttributeList(XMLAttributeList* list) {
-    if (list->attributes) {
-        free(list->attributes);
-    }
-    free(list);
-}
-
-void free_XMLAttributes(void) {
-    for (int i = 0; i < SFXML_ATTRIBUTES->index; i++) {
-        free_XMLAttribute(SFXML_ATTRIBUTES->attributes[i]);
-    }
-    free(SFXML_ATTRIBUTES->attributes);
-    free(SFXML_ATTRIBUTES);
-}
 
 /* DOCUMENT IMPLEMENTATION */
 XMLDocument* new_XMLDocument() {
@@ -252,17 +182,26 @@ bool load_File(XMLDocument* doc, const char* filename) {
     size_t size = ftell(file);
     fseek(file, 0, SEEK_SET);
     if (size > 0) {
-        
+
         /* Initialise buffer and ensure it is null terminated */
         doc->buffer = (char*)calloc(sizeof(char), size + 1);
         doc->file_size = size;
-        
+
         /* Read file into the buffer */
         fread(doc->buffer, 1, size, file);
         fclose(file);
         return true;
     }
     return false;
+}
+
+void free_File(XMLDocument* doc) {
+    free(doc->buffer);
+    free(doc->lexer);
+    doc->buffer = NULL;
+    doc->lexer = NULL;
+    doc->index = 0;
+    doc->lexer_index = 0;
 }
 
 void free_XMLDocument(XMLDocument* doc) {
@@ -273,6 +212,23 @@ void free_XMLDocument(XMLDocument* doc) {
     free(doc);
 }
 
+/* FREE STACKS */
+void free_XMLStacks(void) {
+    /* Free XMLNodes */
+    for (int i = 0; i < SFXML_NODES->count; i++) {
+        free_XMLNode(SFXML_NODES->items[i]);
+    }
+    free(SFXML_NODES->items);
+    free(SFXML_NODES);
+
+    /* Free XMLAttributes */
+    for (int i = 0; i < SFXML_ATTRIBUTES->count; i++) {
+        free_XMLAttribute(SFXML_ATTRIBUTES->items[i]);
+    }
+    free(SFXML_ATTRIBUTES->items);
+    free(SFXML_ATTRIBUTES);
+}
+
 /* HELPER FUNCTION */
 
 /* Returns true if the end of a string is equal to a given suffix. */
@@ -280,7 +236,7 @@ bool ends_with(const char* string, const char* suffix) {
     int string_length = strlen(string);
     int suffix_length = strlen(suffix);
     int end = (string_length - suffix_length);
-    
+
     /* Check if the string length has the right size. */
     if (string_length >= suffix_length)
         /* Compare the string from the end - the suffix length. */
@@ -294,7 +250,7 @@ bool parse_XMLAttributes(XMLDocument* doc, XMLNode* node) {
     XMLAttribute* attribute = new_XMLAttribute();
     while (doc->buffer[doc->index] != '>') {
         doc->lexer[doc->lexer_index++] = doc->buffer[doc->index++];
-        
+
         /* Tag name */
         if (doc->buffer[doc->index] == ' ' && !node->tag) {
             doc->lexer[doc->lexer_index] = '\0';
@@ -311,11 +267,11 @@ bool parse_XMLAttributes(XMLDocument* doc, XMLNode* node) {
 
         /* Attribute Key */
         if (doc->buffer[doc->index] == '=') {
-            
+
             /* NULL terminate string then copy it to the attribute */
             doc->lexer[doc->lexer_index] = '\0';
             attribute->key = strdup(doc->lexer);
-            
+
             /* Reset lexer */
             doc->lexer_index = 0;
             continue;
@@ -334,17 +290,17 @@ bool parse_XMLAttributes(XMLDocument* doc, XMLNode* node) {
             /* Copy attribute value by looking for end of string either a '"'  or '\'' */
             bool escaped = false;
             while (doc->buffer[doc->index] != '"' && doc->buffer[doc->index] != '\'') {
-                
                 /* Check if the next char is escaped */
                 if (doc->buffer[doc->index] == '\\') {
                     escaped = true;
 
                     /* Copy the escaped character instead of the '\' */
-                    doc->lexer[doc->lexer_index++] = doc->buffer[doc->index+1];
-                    
+                    doc->lexer[doc->lexer_index++] = doc->buffer[doc->index + 1];
+
                     /* Skip over the '\' and the escaped character */
                     doc->index += 2;
-                } else {
+                }
+                else {
                     escaped = false;
                     doc->lexer[doc->lexer_index++] = doc->buffer[doc->index++];
                 }
@@ -355,7 +311,7 @@ bool parse_XMLAttributes(XMLDocument* doc, XMLNode* node) {
             attribute->value = strdup(doc->lexer);
 
             /* Append attribute to node and reset */
-            append_XMLAttribute(node->attributes, attribute);
+            append_XMLItem(node->attributes, attribute);
             attribute = new_XMLAttribute();
             doc->lexer_index = 0;
             doc->index++;
@@ -363,20 +319,21 @@ bool parse_XMLAttributes(XMLDocument* doc, XMLNode* node) {
         }
 
         /* Incase attribute does not have a value */
-        if ((doc->buffer[doc->index] == ' ' || doc->buffer[doc->index + 1] == '>') 
+        if ((doc->buffer[doc->index] == ' ' || doc->buffer[doc->index + 1] == '>')
             && node->tag && doc->lexer_index > 0) {
-            
+
             /* Copy a the last character incase where the attribute is at the end of the node */
             if (doc->buffer[doc->index + 1] == '>') {
                 doc->lexer[doc->lexer_index] = doc->buffer[doc->index];
                 doc->lexer[doc->lexer_index + 1] = '\0';
-            } else doc->lexer[doc->lexer_index] = '\0';
-            
+            }
+            else doc->lexer[doc->lexer_index] = '\0';
+
             /* Set attribute key */
             attribute->key = strdup(doc->lexer);
 
             /* Append attribute to node and reset */
-            append_XMLAttribute(node->attributes, attribute);
+            append_XMLItem(node->attributes, attribute);
             attribute = new_XMLAttribute();
             doc->lexer_index = 0;
             doc->index++;
@@ -399,14 +356,13 @@ bool parse_XMLAttributes(XMLDocument* doc, XMLNode* node) {
         }
 
     }
-
     return false;
 }
 
 /* Returns root node on succes, on failure NULL ptr is returned */
 XMLNode* parse_XML(XMLDocument* doc) {
-    SFXML_NODES = new_XMLNodeList();
-    SFXML_ATTRIBUTES = new_XMLAttributeList();
+    SFXML_NODES = new_XMLList();
+    SFXML_ATTRIBUTES = new_XMLList();
 
     XMLNode* root = new_XMLNode(NULL);
     XMLNode* node = root;
@@ -431,7 +387,7 @@ XMLNode* parse_XML(XMLDocument* doc) {
 
             /* End of node */
             if (doc->buffer[doc->index + 1] == '/') {
-                
+
                 /* skip /> */
                 doc->index += 2;
 
@@ -439,16 +395,17 @@ XMLNode* parse_XML(XMLDocument* doc) {
                 while (doc->buffer[doc->index] != '>')
                     doc->lexer[doc->lexer_index++] = doc->buffer[doc->index++];
                 doc->lexer[doc->lexer_index] = '\0';
-                
-                /* Reached root */
+
+                /* Reached root. Free file and return root */
                 if (node == root) {
-                    return root->children->children[0];
+                    free_File(doc);
+                    return root->children->items[0];
                 }
 
                 /* Check if tag matches */
                 if (node->tag == NULL || strcmp(node->tag, doc->lexer)) {
                     fprintf(stderr, "Mismatched tags (%s != %s)\n", node->tag, doc->lexer);
-                    return root->children->children[0];
+                    return root->children->items[0];
                 }
 
                 /* Take a step back to nodes parent */
@@ -468,7 +425,7 @@ XMLNode* parse_XML(XMLDocument* doc) {
                 /* Check if special node is a comment */
                 if (!strcmp(doc->lexer, "<!--")) {
                     doc->lexer[doc->lexer_index] = '\0';
-                    
+
                     /* Check if we have reached the end of the comment */
                     while (!ends_with(doc->lexer, "-->")) {
                         doc->lexer[doc->lexer_index++] = doc->buffer[doc->index++];
@@ -528,7 +485,7 @@ XMLNode* parse_XML(XMLDocument* doc) {
             continue;
         }
         else {
-            
+
             /* Increase lexer_size if inner_text is greater than lexer_size */
             if (doc->lexer_index >= doc->lexer_size) {
                 doc->lexer_size += EXPAND_LEXER_SIZE;
@@ -544,14 +501,14 @@ XMLNode* parse_XML(XMLDocument* doc) {
                 fprintf(stderr, "Lexer is null ptr\n");
                 exit(1);
             }
-            
+
             /* Add inner_text to lexer */
             doc->lexer[doc->lexer_index++] = doc->buffer[doc->index++];
         }
     }
-    
-    /* We are done parsing return root */
-    return root->children->children[0];
+    /* We are done parsing free file and return root */
+    free_File(doc);
+    return root->children->items[0];
 }
 
 #endif /* SXML_H */
