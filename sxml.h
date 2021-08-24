@@ -6,10 +6,12 @@
 #include <string.h>
 #include <stdlib.h>
 
+
 /* GLOBALS */
 #define EXPAND_LEXER_SIZE 1024
 #define NODE_SIZE 2
 #define ATTRIBUTE_SIZE 2
+
 
 /* XML LIST */
 typedef struct _XMLList {
@@ -18,20 +20,35 @@ typedef struct _XMLList {
     void** items;
 } XMLList;
 
+
 /* XML ATTRIBUTE */
 typedef struct _XMLAttribute {
     char* key;
     char* value;
 } XMLAttribute;
 
+
+/* XML VALUE */
+enum XMLType {
+    XMLTypeText,
+    XMLTypeNode
+};
+
+typedef struct _XMLValue {
+    enum XMLType type;
+    void* value;
+} XMLValue;
+
+
 /* XML NODE */
 typedef struct _XMLNode {
     char* tag;
-    char* inner_text;
+    XMLList* inner_xml;
     struct _XMLNode* parent;
     XMLList* attributes;
     XMLList* children;
 } XMLNode;
+
 
 /* XML DOCUMENT */
 typedef struct _XMLDocument {
@@ -44,9 +61,12 @@ typedef struct _XMLDocument {
     size_t file_size;
 } XMLDocument;
 
+
 /* NODE & ATRIBUTE STACK */
 XMLList* SFXML_NODES;
 XMLList* SFXML_ATTRIBUTES;
+XMLList* SFXML_TEXT;
+
 
 /* LIST IMPLEMENTATION */
 XMLList* new_XMLList() {
@@ -77,6 +97,20 @@ void free_XMLList(XMLList* list) {
     free(list);
 }
 
+
+/* VALUE IMPLEMENTATION */
+XMLValue* new_XMLValue(void* item, enum XMLType type) {
+    XMLValue* value = malloc(sizeof(XMLValue));
+    if (!value) {
+        printf("Unable to allocate value\n");
+        exit(1);
+    }
+    value->type = type;
+    value->value = item;
+    return value;
+}
+
+
 /* NODE IMPLEMENTATION */
 XMLNode* new_XMLNode(XMLNode* parent) {
     XMLNode* node = malloc(sizeof(XMLNode));
@@ -86,13 +120,15 @@ XMLNode* new_XMLNode(XMLNode* parent) {
     }
     node->parent = parent;
 
+    node->inner_xml = new_XMLList();
     node->children = new_XMLList();
     node->attributes = new_XMLList();
 
     node->tag = NULL;
-    node->inner_text = NULL;
-    if (parent != NULL)
+    if (parent != NULL) {
+        append_XMLItem(parent->inner_xml, new_XMLValue(node, XMLTypeNode));
         append_XMLItem(parent->children, node);
+    }
     append_XMLItem(SFXML_NODES, node);
     return node;
 }
@@ -113,9 +149,10 @@ void free_XMLNode(XMLNode* node) {
     /* Free tag & text */
     if (node->tag)
         free(node->tag);
-    if (node->inner_text)
-        free(node->inner_text);
-
+    for (int i = 0; i < node->inner_xml->count; i++) {
+        free(node->inner_xml->items[i]);
+    }
+    free_XMLList(node->inner_xml);
     free_XMLList(node->children);
     free_XMLList(node->attributes);
     free(node);
@@ -212,6 +249,7 @@ void free_XMLDocument(XMLDocument* doc) {
     free(doc);
 }
 
+
 /* FREE STACKS */
 void free_XMLStacks(void) {
     /* Free XMLNodes */
@@ -227,7 +265,15 @@ void free_XMLStacks(void) {
     }
     free(SFXML_ATTRIBUTES->items);
     free(SFXML_ATTRIBUTES);
+
+    /* Free XML inner text */
+    for (int i = 0; i < SFXML_TEXT->count; i++) {
+        free(SFXML_TEXT->items[i]);
+    }
+    free(SFXML_TEXT->items);
+    free(SFXML_TEXT);
 }
+
 
 /* HELPER FUNCTION */
 
@@ -359,16 +405,17 @@ bool parse_XMLAttributes(XMLDocument* doc, XMLNode* node) {
     return false;
 }
 
-/* Returns root node on succes, on failure NULL ptr is returned */
+/* Returns root node on success, on failure NULL ptr is returned */
 XMLNode* parse_XML(XMLDocument* doc) {
     SFXML_NODES = new_XMLList();
     SFXML_ATTRIBUTES = new_XMLList();
+    SFXML_TEXT = new_XMLList();
 
     XMLNode* root = new_XMLNode(NULL);
     XMLNode* node = root;
     while (doc->buffer[doc->index] != '\0' && doc->index < doc->file_size) {
-        /* Tag start */
 
+        /* Tag start */
         if (doc->buffer[doc->index] == '<') {
 
             /* Append inner_text to XMLNode OK */
@@ -377,11 +424,10 @@ XMLNode* parse_XML(XMLDocument* doc) {
                     fprintf(stderr, "Text outside of document\n");
                     return NULL;
                 }
-                /* TODO: Append text to inner_text if inner_text is not NULL */
-                if (node->inner_text == NULL) {
-                    doc->lexer[doc->lexer_index] = '\0';
-                    node->inner_text = strdup(doc->lexer);
-                }
+                doc->lexer[doc->lexer_index] = '\0';
+                XMLValue* text = new_XMLValue(strdup(doc->lexer), XMLTypeText);
+                append_XMLItem(node->inner_xml, text);
+                append_XMLItem(SFXML_TEXT, text->value);
                 doc->lexer_index = 0;
             }
 
