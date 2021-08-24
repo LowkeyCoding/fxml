@@ -2,6 +2,7 @@
 A simple xml parser.
 
 ## Features
+- Single header C99
 - Parsing xml :D
 - The ability to escape `"` and `'` in attrubte values using `\`.
 - Attributes without values.
