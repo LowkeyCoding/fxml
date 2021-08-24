@@ -1,0 +1,16 @@
+<?xml version='1.0' encoding="UTF-8"?>
+<DOC>
+    <!-- Very comment -->
+    <window auto title="\"Window 1\'" width="200" height="200" x="0" y="0" notitle>
+        <p>Hello my man i do code</p>
+    </window>
+    <window title="Window 2" width="400" height="200" x="200" y="0">
+        <p>Lorem ipsum dolor sit amet, consectet </p>
+        <br/>
+        <layout rows="2" widths="46,-1">
+            <label>Red</label><slider min="0" max="255" step="1" value="42"></slider>
+            <label>Green</label><slider min="0" max="255" step="1" value="69"></slider>
+            <label>Blue</label><slider min="0" max="255" step="1" value="128"></slider>
+        </layout>
+    </window>
+</DOC>
