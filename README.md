@@ -27,7 +27,6 @@ ___
 ```c
 struct XMLNode {
     char* tag;              // Name of node.
-    char* inner_text;       // Inner_text of node.
     XMLNode* parent;        // Reference to the parent node (NULL if no parent exists).
     XMLList* inner_xml;     // Current index and array of inner_xml.
     XMLList* attributes;    // Current index and array of attributes.
