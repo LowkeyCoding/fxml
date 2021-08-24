@@ -1,2 +1,2 @@
-# fxml
+# sxml
 A simple xml parser
