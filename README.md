@@ -80,4 +80,4 @@ typedef struct _XMLValue {
 - [x] Make lists generic using void pointers.
 - [x] Store the order of inline text and tags.
 - [x] Add a better way for user to be able to itterat over attributes & nodes.
-      - [x] this was done by having better names. No more (`node->attributes->attributes`) instead we have (`node->attributes->items`) and (`attributes->index`) has been replaced with (`attributes->count`) making it eaisier to read when making loops.
+  - [x] this was done by having better names. No more (`node->attributes->attributes`) instead we have (`node->attributes->items`) and (`attributes->index`) has been replaced with (`attributes->count`) making it eaisier to read when making loops.
