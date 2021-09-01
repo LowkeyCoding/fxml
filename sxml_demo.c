@@ -3,7 +3,7 @@
 int main(int argc, char** argv) {
     XMLDocument* doc = new_XMLDocument();
     XMLNode* root;
-    if (load_File(doc, "test.xml")) {
+    if (load_File(doc, "./tests/files/example.xml")) {
         root = parse_XML(doc);
         if (root != NULL) {
             print_XMLNode(root, 0);
