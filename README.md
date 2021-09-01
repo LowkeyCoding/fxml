@@ -69,13 +69,13 @@ typedef struct _XMLValue {
 ```
 
 ## Todo
-- [ ] Add tests
-    - [ ] node
+- [x] Add tests
+    - [x] node
     - [ ] inline node
-    - [ ] attributes
-    - [ ] children
+    - [x] attributes
+    - [x] children
     - [ ] inner_xml
-    - [ ] document
+    - [x] document
 - [x] Make lists generic using void pointers.
 - [x] Store the order of inline text and tags.
 - [x] Add a better way for user to be able to itterat over attributes & nodes.
