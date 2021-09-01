@@ -13,8 +13,8 @@ A simple xml parser.
 ### Parse xml file
 ___
 First to load a document you have to initialise a document by doing `XMLDocument* doc = new_XMLDocument()`.  
-Then load the document using `load_File(doc, file_path)` this will return `1` if it succeed in loading the file.  
-Lastly to parse file run `XMLNode* root = parse_XML(doc)` now you got the xml root node.  
+Then load the document using `load_file(doc, file_path)` this will return `1` if it succeed in loading the file.  
+Lastly to parse file run `XMLNode* root = parse_xml(doc)` now you got the xml root node.  
 
 ### Free
 ___
