@@ -17,7 +17,7 @@ void test_init_XMLDocument(CuTest* tc){
 }
 
 void test_load_XMLDocument(CuTest* tc){
-    CuAssertIntEquals(tc, 1,  load_File(gdoc, "./files/doc.xml"));
+    CuAssertIntEquals(tc, 1,  load_file(gdoc, "./files/doc.xml"));
     CuAssertPtrNotNull(tc, gdoc->buffer);
     CuAssertIntEquals(tc, 12, gdoc->file_size);
     
@@ -26,7 +26,7 @@ void test_load_XMLDocument(CuTest* tc){
 
 void test_parse_XMLDocument(CuTest* tc){
     if(gdoc->buffer)
-        groot = parse_XML(gdoc);
+        groot = parse_xml(gdoc);
 
     CuAssertPtrNotNullMsg(tc, "Failed to parse XMLDocument", groot);
     CuAssertPtrNotNull(tc, groot->children);
@@ -54,10 +54,10 @@ void test_parse_XMLDocument(CuTest* tc){
 void test_parse_declaration_XMLNode(CuTest* tc){
     gdoc = new_XMLDocument();
     CuAssertPtrNotNull(tc, gdoc);
-    CuAssertIntEquals(tc, 1, load_File(gdoc, "./files/declaration.xml"));
+    CuAssertIntEquals(tc, 1, load_file(gdoc, "./files/declaration.xml"));
     CuAssertPtrNotNull(tc, gdoc->buffer);
     if(gdoc->buffer)
-        groot = parse_XML(gdoc);
+        groot = parse_xml(gdoc);
 
     CuAssertIntEquals(tc, 2, SXML_NODES->count);
     CuAssertIntEquals(tc, 2, SXML_ATTRIBUTES->count);
@@ -81,10 +81,10 @@ void test_parse_declaration_XMLNode(CuTest* tc){
 void test_parse_attributes(CuTest* tc) {
     gdoc = new_XMLDocument();
     CuAssertPtrNotNull(tc, gdoc);
-    CuAssertIntEquals(tc, 1, load_File(gdoc, "./files/attributes.xml"));
+    CuAssertIntEquals(tc, 1, load_file(gdoc, "./files/attributes.xml"));
     CuAssertPtrNotNull(tc, gdoc->buffer);
     if (gdoc->buffer)
-        groot = parse_XML(gdoc);
+        groot = parse_xml(gdoc);
 
     CuAssertIntEquals(tc, 2, SXML_NODES->count);
     CuAssertIntEquals(tc, 6, SXML_ATTRIBUTES->count);
@@ -118,10 +118,10 @@ void test_parse_attributes(CuTest* tc) {
 void test_parse_example(CuTest* tc) {
     gdoc = new_XMLDocument();
     CuAssertPtrNotNull(tc, gdoc);
-    CuAssertIntEquals(tc, 1, load_File(gdoc, "./files/example.xml"));
+    CuAssertIntEquals(tc, 1, load_file(gdoc, "./files/example.xml"));
     CuAssertPtrNotNull(tc, gdoc->buffer);
     if (gdoc->buffer)
-        groot = parse_XML(gdoc);
+        groot = parse_xml(gdoc);
 
     CuAssertIntEquals(tc, 15, SXML_NODES->count);
     CuAssertIntEquals(tc, 29, SXML_ATTRIBUTES->count);

@@ -214,7 +214,7 @@ XMLDocument* new_XMLDocument() {
     return doc;
 }
 
-bool load_File(XMLDocument* doc, const char* filename) {
+bool load_file(XMLDocument* doc, const char* filename) {
     /* Check if file opened succesfully */
     FILE* file = fopen(filename, "r");
     if (!file) {
@@ -240,7 +240,7 @@ bool load_File(XMLDocument* doc, const char* filename) {
     return false;
 }
 
-void free_File(XMLDocument* doc) {
+void free_file(XMLDocument* doc) {
     if (doc) {
         free(doc->buffer);
         free(doc->lexer);
@@ -426,7 +426,7 @@ bool parse_XMLAttributes(XMLDocument* doc, XMLNode* node) {
 }
 
 /* Returns root node on success, on failure NULL ptr is returned */
-XMLNode* parse_XML(XMLDocument* doc) {
+XMLNode* parse_xml(XMLDocument* doc) {
     SXML_NODES = new_XMLList();
     SXML_ATTRIBUTES = new_XMLList();
     SXML_TEXT = new_XMLList();
@@ -464,7 +464,7 @@ XMLNode* parse_XML(XMLDocument* doc) {
 
                 /* Reached root. Free file and return root */
                 if (node == root) {
-                    free_File(doc);
+                    free_file(doc);
                     ((XMLNode*)root->children->items[0])->parent = NULL;
                     return root->children->items[0];
                 }
@@ -574,7 +574,7 @@ XMLNode* parse_XML(XMLDocument* doc) {
         }
     }
     /* We are done parsing free file and return root */
-    free_File(doc);
+    free_file(doc);
     if (root->children->count > 0) {
         ((XMLNode*)root->children->items[0])->parent = NULL;
         return root->children->items[0];
