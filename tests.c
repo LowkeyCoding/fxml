@@ -1,5 +1,5 @@
-#include "../sxml.h"
-#include "CuTest.h"
+#include "sxml.h"
+#include "./lib/CuTest.h"
 
 XMLDocument* gdoc;
 XMLNode* groot;
@@ -17,7 +17,7 @@ void test_init_XMLDocument(CuTest* tc){
 }
 
 void test_load_XMLDocument(CuTest* tc){
-    CuAssertIntEquals(tc, 1,  load_file(gdoc, "./files/doc.xml"));
+    CuAssertIntEquals(tc, 1,  load_file(gdoc, "./tests/doc.xml"));
     CuAssertPtrNotNull(tc, gdoc->buffer);
     CuAssertIntEquals(tc, 12, gdoc->file_size);
     
@@ -54,7 +54,7 @@ void test_parse_XMLDocument(CuTest* tc){
 void test_parse_declaration_XMLNode(CuTest* tc){
     gdoc = new_XMLDocument();
     CuAssertPtrNotNull(tc, gdoc);
-    CuAssertIntEquals(tc, 1, load_file(gdoc, "./files/declaration.xml"));
+    CuAssertIntEquals(tc, 1, load_file(gdoc, "./tests/declaration.xml"));
     CuAssertPtrNotNull(tc, gdoc->buffer);
     if(gdoc->buffer)
         groot = parse_xml(gdoc);
@@ -81,7 +81,7 @@ void test_parse_declaration_XMLNode(CuTest* tc){
 void test_parse_attributes(CuTest* tc) {
     gdoc = new_XMLDocument();
     CuAssertPtrNotNull(tc, gdoc);
-    CuAssertIntEquals(tc, 1, load_file(gdoc, "./files/attributes.xml"));
+    CuAssertIntEquals(tc, 1, load_file(gdoc, "./tests/attributes.xml"));
     CuAssertPtrNotNull(tc, gdoc->buffer);
     if (gdoc->buffer)
         groot = parse_xml(gdoc);
@@ -115,17 +115,103 @@ void test_parse_attributes(CuTest* tc) {
     free_XMLStacks();
 }
 
+void test_parse_inline(CuTest* tc) {
+    gdoc = new_XMLDocument();
+    CuAssertPtrNotNull(tc, gdoc);
+    CuAssertIntEquals(tc, 1, load_file(gdoc, "./tests/inline.xml"));
+    CuAssertPtrNotNull(tc, gdoc->buffer);
+    if (gdoc->buffer)
+        groot = parse_xml(gdoc);
+
+    CuAssertIntEquals(tc, 2, SXML_NODES->count);
+    CuAssertIntEquals(tc, 5, SXML_ATTRIBUTES->count);
+    CuAssertIntEquals(tc, 0, SXML_TEXT->count);
+
+    CuAssertStrEquals(tc, "br", groot->tag);
+
+    CuAssertPtrNotNull(tc, groot->children);
+    CuAssertPtrNotNull(tc, groot->attributes);
+
+    CuAssertIntEquals(tc, 0, groot->children->count);
+    CuAssertIntEquals(tc, 5, groot->attributes->count);
+
+    XMLAttribute* sv = get_XMLAttribute(groot, "sv");
+    XMLAttribute* va = get_XMLAttribute(groot, "va");
+    XMLAttribute* mv = get_XMLAttribute(groot, "mv");
+    XMLAttribute* vb = get_XMLAttribute(groot, "vb");
+    XMLAttribute* ev = get_XMLAttribute(groot, "ev");
+
+    CuAssertPtrNotNull(tc, sv);
+    CuAssertPtrNotNull(tc, va);
+    CuAssertPtrNotNull(tc, mv);
+    CuAssertPtrNotNull(tc, vb);
+    CuAssertPtrNotNull(tc, ev);
+
+    CuAssertPtrEquals(tc, NULL, sv->value);
+    CuAssertStrEquals(tc, "aaa", va->value);
+    CuAssertPtrEquals(tc, NULL, mv->value);
+    CuAssertStrEquals(tc, "bbb", vb->value);
+    CuAssertPtrEquals(tc, NULL, ev->value);
+
+    free_XMLDocument(gdoc);
+    free_XMLStacks();
+}
+
+void test_inner_xml(CuTest* tc) {
+    gdoc = new_XMLDocument();
+    CuAssertPtrNotNull(tc, gdoc);
+    CuAssertIntEquals(tc, 1, load_file(gdoc, "./tests/inner.xml"));
+    CuAssertPtrNotNull(tc, gdoc->buffer);
+    if (gdoc->buffer)
+        groot = parse_xml(gdoc);
+
+    CuAssertIntEquals(tc, 4, SXML_NODES->count);
+    CuAssertIntEquals(tc, 1, SXML_ATTRIBUTES->count);
+    CuAssertIntEquals(tc, 4, SXML_TEXT->count);
+
+    CuAssertStrEquals(tc, "DOC", groot->tag);
+
+    CuAssertPtrNotNull(tc, groot->children);
+    CuAssertPtrNotNull(tc, groot->attributes);
+    CuAssertPtrNotNull(tc, groot->inner_xml);
+
+    CuAssertIntEquals(tc, 2, groot->children->count);
+    CuAssertIntEquals(tc, 0, groot->attributes->count);
+    CuAssertIntEquals(tc, 5, groot->inner_xml->count);
+
+    int inner_xml_types[] = { 0,1,0,1,0 };
+    char inner_xml_text[5][50] = {
+        "Hello this is the first string",
+        "br",
+        "This is the second string\nhas multiple lines",
+        "p",
+        "final string",
+    };
+
+    for (int i = 0; i < groot->inner_xml->count; i++) {
+        XMLValue* item = groot->inner_xml->items[i];
+        CuAssertIntEquals(tc, inner_xml_types[i], item->type);
+        if (item->type)
+            CuAssertStrEquals(tc, inner_xml_text[i], ((XMLNode*)item->value)->tag);
+        else
+            CuAssertStrEquals(tc, inner_xml_text[i], (char*)item->value);
+    }
+
+    free_XMLDocument(gdoc);
+    free_XMLStacks();
+}
+
 void test_parse_example(CuTest* tc) {
     gdoc = new_XMLDocument();
     CuAssertPtrNotNull(tc, gdoc);
-    CuAssertIntEquals(tc, 1, load_file(gdoc, "./files/example.xml"));
+    CuAssertIntEquals(tc, 1, load_file(gdoc, "./tests/example.xml"));
     CuAssertPtrNotNull(tc, gdoc->buffer);
     if (gdoc->buffer)
         groot = parse_xml(gdoc);
 
     CuAssertIntEquals(tc, 15, SXML_NODES->count);
     CuAssertIntEquals(tc, 29, SXML_ATTRIBUTES->count);
-    CuAssertIntEquals(tc, 20, SXML_TEXT->count);
+    CuAssertIntEquals(tc, 5, SXML_TEXT->count);
 
     free_XMLDocument(gdoc);
 }
@@ -146,6 +232,8 @@ CuSuite* test_suite() {
     SUITE_ADD_TEST(suite, test_parse_XMLDocument);
     SUITE_ADD_TEST(suite, test_parse_declaration_XMLNode);
     SUITE_ADD_TEST(suite, test_parse_attributes);
+    SUITE_ADD_TEST(suite, test_parse_inline);
+    SUITE_ADD_TEST(suite, test_inner_xml);
     SUITE_ADD_TEST(suite, test_parse_example);
     SUITE_ADD_TEST(suite, test_free_XMLStacks);
     return suite;

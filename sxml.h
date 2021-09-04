@@ -313,6 +313,34 @@ bool ends_with(const char* string, const char* suffix) {
     return false;
 }
 
+/* Returns true if the given char is 0x20 or 0x09-0x0d. */
+bool is_whitespace(const char c) {
+    if (c == 0x20 || c == 0x09 || c == 0x0a || c == 0x0b || c == 0x0c || c == 0x0d ) return true;
+    return false;
+}
+
+char* trim_string(char* string) {
+    char* start = string;
+    size_t length = 0;
+    /* remove leading whitespace */
+    while (is_whitespace((char)*string)) string++;
+    /* if we still have a string */
+    if (*string) {
+
+        /* Go to end of string */
+        char* pointer = string;
+        while (*pointer) pointer++;
+
+        /* Remove trailing whitespace */
+        while (is_whitespace(*(--pointer)));
+        pointer[1] = '\0';
+
+        length = (size_t)(pointer - string + 1);
+
+        return (string == start) ? string : memmove(start, string, length + 1);
+    }
+}
+
 /* Returns true if a given node is inline. It also adds attributes to the node. */
 bool parse_XMLAttributes(XMLDocument* doc, XMLNode* node) {
     XMLAttribute* attribute = 0;
@@ -328,8 +356,8 @@ bool parse_XMLAttributes(XMLDocument* doc, XMLNode* node) {
             continue;
         }
 
-        /* Ignore spaces */
-        if (doc->lexer[doc->lexer_index - 1] == ' ') {
+        /* Ignore whitespace */
+        if (is_whitespace(doc->lexer[doc->lexer_index - 1])) {
             doc->lexer_index--;
         }
 
@@ -385,13 +413,16 @@ bool parse_XMLAttributes(XMLDocument* doc, XMLNode* node) {
         }
 
         /* Incase attribute does not have a value */
-        if ((doc->buffer[doc->index] == ' ' || doc->buffer[doc->index + 1] == '>')
+        char previous = doc->buffer[doc->index];
+        char current = doc->buffer[doc->index + 1];
+
+        if ((previous == ' ' || current == '>' || current == '/')
             && node->tag && doc->lexer_index > 0) {
 
             attribute = new_XMLAttribute();
 
             /* Copy a the last character incase where the attribute is at the end of the node */
-            if (doc->buffer[doc->index + 1] == '>') {
+            if (current == '>' || current == '/') {
                 doc->lexer[doc->lexer_index] = doc->buffer[doc->index];
                 doc->lexer[doc->lexer_index + 1] = '\0';
             }
@@ -444,10 +475,15 @@ XMLNode* parse_xml(XMLDocument* doc) {
                     fprintf(stderr, "Text outside of document\n");
                     return NULL;
                 }
+
                 doc->lexer[doc->lexer_index] = '\0';
-                XMLValue* text = new_XMLValue(_strdup(doc->lexer), XMLTypeText);
-                append_XMLItem(node->inner_xml, text);
-                append_XMLItem(SXML_TEXT, text->value);
+                char* string = trim_string(doc->lexer);
+
+                if (strlen(string) > 0) {
+                    XMLValue* text = new_XMLValue(_strdup(string), XMLTypeText);
+                    append_XMLItem(node->inner_xml, text);
+                    append_XMLItem(SXML_TEXT, text->value);
+                }
                 doc->lexer_index = 0;
             }
 
@@ -465,8 +501,11 @@ XMLNode* parse_xml(XMLDocument* doc) {
                 /* Reached root. Free file and return root */
                 if (node == root) {
                     free_file(doc);
-                    ((XMLNode*)root->children->items[0])->parent = NULL;
-                    return root->children->items[0];
+                    if (root->children->count > 0) {
+                        ((XMLNode*)root->children->items[0])->parent = NULL;
+                        return root->children->items[0];
+                    }
+                    return node;
                 }
 
                 /* Check if tag matches */
@@ -522,6 +561,10 @@ XMLNode* parse_xml(XMLDocument* doc) {
                     /* Set the attributes of xml document */
                     doc->info = declaration->attributes;
 
+                    /* Skip "?>" */
+                    doc->index++;
+                    doc->lexer_index = 0;
+
                     continue;
                 }
             }
@@ -571,6 +614,9 @@ XMLNode* parse_xml(XMLDocument* doc) {
 
             /* Add inner_text to lexer */
             doc->lexer[doc->lexer_index++] = doc->buffer[doc->index++];
+            char char1 = doc->lexer[doc->lexer_index - 1];
+            char char2 = doc->lexer[doc->lexer_index - 2];
+            if (is_whitespace(char1) && is_whitespace(char2)) doc->lexer_index--;
         }
     }
     /* We are done parsing free file and return root */
