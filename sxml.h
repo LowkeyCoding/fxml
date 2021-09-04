@@ -322,8 +322,10 @@ bool is_whitespace(const char c) {
 char* trim_string(char* string) {
     char* start = string;
     size_t length = 0;
+    
     /* remove leading whitespace */
-    while (is_whitespace((char)*string)) string++;
+    while (is_whitespace(*(++string)));
+
     /* if we still have a string */
     if (*string) {
 
@@ -336,9 +338,8 @@ char* trim_string(char* string) {
         pointer[1] = '\0';
 
         length = (size_t)(pointer - string + 1);
-
-        return (string == start) ? string : memmove(start, string, length + 1);
     }
+    return (string == start) ? string : memmove(start, string, length + 1);
 }
 
 /* Returns true if a given node is inline. It also adds attributes to the node. */

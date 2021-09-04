@@ -1,5 +1,5 @@
 #include "sxml.h"
-#include "./lib/CuTest.h"
+#include "./libs/CuTest.h"
 
 XMLDocument* gdoc;
 XMLNode* groot;
@@ -205,6 +205,7 @@ void test_parse_example(CuTest* tc) {
     gdoc = new_XMLDocument();
     CuAssertPtrNotNull(tc, gdoc);
     CuAssertIntEquals(tc, 1, load_file(gdoc, "./tests/example.xml"));
+
     CuAssertPtrNotNull(tc, gdoc->buffer);
     if (gdoc->buffer)
         groot = parse_xml(gdoc);
