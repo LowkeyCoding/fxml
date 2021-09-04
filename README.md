@@ -8,6 +8,43 @@ A simple xml parser.
 - The ability to escape `"` and `'` in attrubte values using `\`.
 - Attributes without values.
 
+## Build demo and test
+
+To build the tests run `make test` this will create the `test` executable.  
+Running `./test` will output if all tests passes:
+```
+Runing 9 tests:
+
+1) INIT_XMLDOCUMENT:          Passed
+2) LOAD_XMLDOCUMENT:          Passed
+3) PARSE_XMLDOCUMENT:         Passed
+4) PARSE_DECLARATION_XMLNODE: Passed
+5) PARSE_ATTRIBUTES:          Passed
+6) PARSE_INLINE:              Passed
+7) INNER_XML:                 Passed
+8) PARSE_EXAMPLE:             Passed
+9) FREE_XMLSTACKS:            Passed
+
+Runs: 9 Passes: 9 Fails: 0
+```
+To build the demo run `make demo` this will create the `demo` executable.  
+Running `./demo` will output:
+```
+ DOC title="document"
+    window auto="(null)" title=""Window 1'" width="200" height="200" x="0" y="0" notitle="(null)"
+        p
+    window title="Window 2" width="400" height="200" x="200" y="0"
+        p
+        br
+        layout rows="2" widths="46,-1"
+            label
+            slider min="0" max="255" step="1" value="42"
+            label
+            slider min="0" max="255" step="1" value="69"
+            label
+            slider min="0" max="255" step="1" value="128"
+```
+
 ## Usage
 
 ### Parse xml file
@@ -71,10 +108,10 @@ typedef struct _XMLValue {
 ## Todo
 - [x] Add tests
     - [x] node
-    - [ ] inline node
+    - [x] inline node
     - [x] attributes
     - [x] children
-    - [ ] inner_xml
+    - [x] inner_xml
     - [x] document
 - [x] Make lists generic using void pointers.
 - [x] Store the order of inline text and tags.
