@@ -17,7 +17,7 @@ void test_init_XMLDocument(CuTest* tc){
 }
 
 void test_load_XMLDocument(CuTest* tc){
-    CuAssertIntEquals(tc, 1,  load_file(gdoc, "./tests/doc.xml"));
+    CuAssertIntEquals(tc, 1,  load_file(gdoc, "../tests/doc.xml"));
     CuAssertPtrNotNull(tc, gdoc->buffer);
     CuAssertIntEquals(tc, 12, gdoc->file_size);
     
@@ -54,7 +54,7 @@ void test_parse_XMLDocument(CuTest* tc){
 void test_parse_declaration_XMLNode(CuTest* tc){
     gdoc = new_XMLDocument();
     CuAssertPtrNotNull(tc, gdoc);
-    CuAssertIntEquals(tc, 1, load_file(gdoc, "./tests/declaration.xml"));
+    CuAssertIntEquals(tc, 1, load_file(gdoc, "../tests/declaration.xml"));
     CuAssertPtrNotNull(tc, gdoc->buffer);
     if(gdoc->buffer)
         groot = parse_xml(gdoc);
@@ -81,7 +81,7 @@ void test_parse_declaration_XMLNode(CuTest* tc){
 void test_parse_attributes(CuTest* tc) {
     gdoc = new_XMLDocument();
     CuAssertPtrNotNull(tc, gdoc);
-    CuAssertIntEquals(tc, 1, load_file(gdoc, "./tests/attributes.xml"));
+    CuAssertIntEquals(tc, 1, load_file(gdoc, "../tests/attributes.xml"));
     CuAssertPtrNotNull(tc, gdoc->buffer);
     if (gdoc->buffer)
         groot = parse_xml(gdoc);
@@ -118,7 +118,7 @@ void test_parse_attributes(CuTest* tc) {
 void test_parse_inline(CuTest* tc) {
     gdoc = new_XMLDocument();
     CuAssertPtrNotNull(tc, gdoc);
-    CuAssertIntEquals(tc, 1, load_file(gdoc, "./tests/inline.xml"));
+    CuAssertIntEquals(tc, 1, load_file(gdoc, "../tests/inline.xml"));
     CuAssertPtrNotNull(tc, gdoc->buffer);
     if (gdoc->buffer)
         groot = parse_xml(gdoc);
@@ -160,7 +160,7 @@ void test_parse_inline(CuTest* tc) {
 void test_inner_xml(CuTest* tc) {
     gdoc = new_XMLDocument();
     CuAssertPtrNotNull(tc, gdoc);
-    CuAssertIntEquals(tc, 1, load_file(gdoc, "./tests/inner.xml"));
+    CuAssertIntEquals(tc, 1, load_file(gdoc, "../tests/inner.xml"));
     CuAssertPtrNotNull(tc, gdoc->buffer);
     if (gdoc->buffer)
         groot = parse_xml(gdoc);
@@ -204,7 +204,7 @@ void test_inner_xml(CuTest* tc) {
 void test_parse_example(CuTest* tc) {
     gdoc = new_XMLDocument();
     CuAssertPtrNotNull(tc, gdoc);
-    CuAssertIntEquals(tc, 1, load_file(gdoc, "./tests/example.xml"));
+    CuAssertIntEquals(tc, 1, load_file(gdoc, "../tests/example.xml"));
 
     CuAssertPtrNotNull(tc, gdoc->buffer);
     if (gdoc->buffer)

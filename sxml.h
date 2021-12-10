@@ -9,11 +9,10 @@
 /* GLOBALS */
 #define EXPAND_LEXER_SIZE 1024
 #define NODE_SIZE 2
-#define ATTRIBUTE_SIZE 2
 
 
 /* XML LIST */
-typedef struct _XMLList {
+typedef struct XMLList {
     int heap_size;
     int count;
     void** items;
@@ -21,7 +20,7 @@ typedef struct _XMLList {
 
 
 /* XML ATTRIBUTE */
-typedef struct _XMLAttribute {
+typedef struct XMLAttribute {
     char* key;
     char* value;
 } XMLAttribute;
@@ -33,16 +32,16 @@ enum XMLType {
     XMLTypeNode
 };
 
-typedef struct _XMLValue {
+typedef struct XMLValue {
     enum XMLType type;
     void* value;
 } XMLValue;
 
 
 /* XML NODE */
-typedef struct _XMLNode {
+typedef struct XMLNode {
     char* tag;
-    struct _XMLNode* parent;
+    struct XMLNode* parent;
     XMLList* inner_xml;
     XMLList* attributes;
     XMLList* children;
@@ -50,7 +49,7 @@ typedef struct _XMLNode {
 
 
 /* XML DOCUMENT */
-typedef struct _XMLDocument {
+typedef struct XMLDocument {
     char* buffer;
     char* lexer;
     XMLList* info;
@@ -61,7 +60,7 @@ typedef struct _XMLDocument {
 } XMLDocument;
 
 
-/* NODE & ATRIBUTE STACK */
+/* NODE & ATTRIBUTE STACK */
 XMLList* SXML_NODES;
 XMLList* SXML_ATTRIBUTES;
 XMLList* SXML_TEXT;
@@ -134,7 +133,7 @@ XMLNode* new_XMLNode(XMLNode* parent) {
     return node;
 }
 
-void print_XMLNode(XMLNode* node, int indent) {
+void print_XMLNode(XMLNode *node, int indent) {
     printf("%*s%s", 4 * indent, " ", node->tag);
     for (int i = 0; i < node->attributes->count; i++) {
         XMLAttribute* attribute = node->attributes->items[i];
@@ -215,7 +214,7 @@ XMLDocument* new_XMLDocument() {
 }
 
 bool load_file(XMLDocument* doc, const char* filename) {
-    /* Check if file opened succesfully */
+    /* Check if file opened successfully */
     FILE* file = fopen(filename, "r");
     if (!file) {
         fprintf(stderr, "Could not load file from '%s'\n", filename);
@@ -301,9 +300,9 @@ void free_XMLStacks(void) {
 
 /* Returns true if the end of a string is equal to a given suffix. */
 bool ends_with(const char* string, const char* suffix) {
-    int string_length = strlen(string);
-    int suffix_length = strlen(suffix);
-    int end = (string_length - suffix_length);
+    size_t string_length = strlen(string);
+    size_t suffix_length = strlen(suffix);
+    size_t end = (string_length - suffix_length);
 
     /* Check if the string length has the right size. */
     if (string_length >= suffix_length)
@@ -413,7 +412,7 @@ bool parse_XMLAttributes(XMLDocument* doc, XMLNode* node) {
             continue;
         }
 
-        /* Incase attribute does not have a value */
+        /* In case attribute does not have a value */
         char previous = doc->buffer[doc->index];
         char current = doc->buffer[doc->index + 1];
 
@@ -422,7 +421,7 @@ bool parse_XMLAttributes(XMLDocument* doc, XMLNode* node) {
 
             attribute = new_XMLAttribute();
 
-            /* Copy a the last character incase where the attribute is at the end of the node */
+            /* Copy the last character in cases where the attribute is at the end of the node */
             if (current == '>' || current == '/') {
                 doc->lexer[doc->lexer_index] = doc->buffer[doc->index];
                 doc->lexer[doc->lexer_index + 1] = '\0';
@@ -441,7 +440,7 @@ bool parse_XMLAttributes(XMLDocument* doc, XMLNode* node) {
 
         /* Inline node */
         if (doc->buffer[doc->index - 1] == '/' && doc->buffer[doc->index] == '>') {
-            /* Terminate the tag index-1 since we dont want '/' in the tag */
+            /* Terminate the tag index-1 since we don't want '/' in the tag */
             doc->lexer[doc->lexer_index - 1] = '\0';
 
             /* Ensure the tag is not already set */
@@ -510,7 +509,7 @@ XMLNode* parse_xml(XMLDocument* doc) {
                 }
 
                 /* Check if tag matches */
-                if (node->tag == NULL || strcmp(node->tag, doc->lexer)) {
+                if (node->tag == NULL || strcmp(node->tag, doc->lexer) != 0) {
                     fprintf(stderr, "Mismatched tags (%s != %s)\n", node->tag, doc->lexer);
                     return NULL;
                 }
@@ -576,7 +575,7 @@ XMLNode* parse_xml(XMLDocument* doc) {
             /* Start tag */
             doc->index++;
 
-            /* Incase we have a inline node go back to parent immediately */
+            /* In case we have the inline node go back to parent immediately */
             if (parse_XMLAttributes(doc, node)) {
                 node = node->parent;
                 doc->lexer_index = 0;
